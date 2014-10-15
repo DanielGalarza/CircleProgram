@@ -1,0 +1,262 @@
+import java.awt.*;
+import java.awt.event.*;
+import java.util.*;
+import javax.swing.*;
+import java.io.*;
+
+
+/**
+ * This program creates a frame, which includes buttons that let the user draw 
+ * circles, draw lines with the mouse, and erase the screen when finished. 
+ *
+ * @author Daniel Galarza, CS 2050.
+ */
+public class CircleProgram {
+
+    private JFrame frame;               // The JFrame of the program that contains.
+    private boolean trackCirButton;     // Sets the "Draw Circle" button to either true or false.
+    private boolean trackDotButton;     // Sets the "Connect The Dots" button to either true/false.
+    private boolean trackEraseButton;   // Sets the "Erase Button" to either true or false.
+    private int x_center;               // The x-coordinate where the circle is centered.
+    private int y_center;               // The y-coordinate where the circle is centered.
+    private int x_draw;                 // The x-coordinate used to draw a line.
+    private int y_draw;                 // The y-coordinate used to draw a line.
+    private int borderWidth = 5;        // Width of component.
+    
+    
+    public static void main(String[] arg) {
+        CircleProgram c = new CircleProgram();
+    } //main 
+
+////////////////////////////// OBJECT STUFF BELOW //////////////////////////////
+    
+    JPanel buttonPanel;
+    String circleString = "Draw Circle";
+    String connect = "Connect The Dots";
+    ArrayList<Circle> circleList = new ArrayList<Circle>(); // stores the circles
+    ArrayList<Dots> pointList = new ArrayList<Dots>();      // stores the points of mouse
+
+    /**
+     * Class constructor. It creates a frame that contains a button within a
+     * container to either draw circles that are centered on the click of the mouse,
+     * or draw lines as the mouse enters the drawing space. The frame also contains 
+     * a button to erase the screen of any circles or lines.
+     *
+     */
+    public CircleProgram() {
+        trackCirButton = false;
+        trackDotButton = false;
+        trackEraseButton = false;
+        frame = new JFrame();                       // creates the frame.
+        frame.setBounds(250, 98, 600, 480);         // bounds of the frame.
+        frame.setTitle("Program #3");
+        Container cp = frame.getContentPane();
+        JButton eraseButton = new JButton("Erase"); // erase button.
+        
+        // buttons to draw circle and draw the lines
+        JRadioButton circleButton = new JRadioButton(circleString);
+        circleButton.setActionCommand(circleString);
+        JRadioButton dotsConnect = new JRadioButton(connect);
+        dotsConnect.setActionCommand(connect);
+
+        //Groups the buttons
+        ButtonGroup group = new ButtonGroup();
+        group.add(circleButton);
+        group.add(dotsConnect);
+        buttonPanel = new JPanel(new GridLayout(2, 1));
+        buttonPanel.add(circleButton);
+        buttonPanel.add(dotsConnect);
+                
+        //Listeners for the buttons.
+        circleButton.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent ae) {
+                buttonsFalse();
+                trackButton();
+            }
+        }); // draw circles listener 
+        
+        dotsConnect.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent ae) {
+                buttonsFalse();
+                trackButton2();
+            }
+        }); // connect the dots linstener
+        eraseButton.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent ae) {
+                trackButton3();
+                circleList.clear();
+                pointList.clear();
+                frame.repaint();
+            }
+        }); // erase button listener
+        
+        //
+        JPanel top = new JPanel();
+        JPanel east = new JPanel();
+        top.add(eraseButton);
+        east.add(buttonPanel);
+        cp.add(top, BorderLayout.NORTH);
+        cp.add(east, BorderLayout.EAST);
+        MyPanel pane = new MyPanel();
+        cp.add(pane, BorderLayout.CENTER);
+        
+        // tracks the mouse and draws circle
+        pane.addMouseListener(new MouseAdapter() {
+            public void mousePressed(MouseEvent e) {
+                if(trackCirButton) {
+                    x_center = e.getX();
+                    y_center = e.getY();
+                    Circle c = new Circle();
+                    circleList.add(c);
+                    frame.repaint(); 
+               
+                }
+            }
+        }); // listens when the mouse is pressed and draws circles
+	
+ 	pane.addMouseMotionListener(new MouseMotionAdapter() {
+            public void mouseDragged(MouseEvent e) {
+                if (trackDotButton) {
+                    x_draw = e.getX();
+                    y_draw = e.getY();
+                    Dots dots = new Dots(x_draw, y_draw);
+                    pointList.add(dots);
+                    frame.repaint();
+                }
+            }
+        }); // Listens when the mouse is dragged and draws "lines"/connects dots
+	
+             //Stopwatch time = new Stopwatch();
+             //double tim = time.getElapsedTime();
+             //System.out.println(" time: " + tim);
+        frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        frame.setVisible(true);
+    }
+    /**
+     * Turns on the circle button.
+     */
+    public void trackButton() {	
+	trackCirButton = true;
+    } //track draw button 
+     
+    /**
+      * Turns on the dot/line button.
+      */
+    public void trackButton2() {	
+	trackDotButton = true;
+    } //track dots button
+    
+    /**
+     * Toggles the erase button on and off.
+     */
+    public void trackButton3() {	
+	trackEraseButton =  !trackEraseButton;
+    } // track erase button
+    
+    /**
+     * Turns off all the buttons.
+     */
+    public void buttonsFalse() {
+        trackCirButton = false;
+        trackDotButton = false;
+        trackEraseButton = false;
+    }
+     
+/**
+ * The MyPanel class contains all the calls to draw 
+ * the circles and the dots/lines.
+ * 
+ * @param g 
+ */
+public class MyPanel extends JPanel {	
+
+    public void paintComponent(Graphics g) {
+	int width  = this.getWidth();
+	int height = this.getHeight();
+	g.setColor(Color.RED);
+
+        if(trackDotButton){ 
+            for(int i = 1; i < pointList.size(); i++) {
+                pointList.get(i).drawdots(g, pointList.get(i-1));
+            } 
+        } // draws the dots/lines.
+      
+        for (int delta = 0; delta < borderWidth; delta++) {
+            g.drawRect(delta,delta,width-(2*delta),height-(2*delta));
+        } // draws the colored border of the drawing component.
+        
+        if(trackCirButton) {
+            for(int i = 0; i < circleList.size(); i++) {
+                circleList.get(i).draw(g);
+            } // draws the circle
+        }   
+    }
+}
+
+/**
+ * The Circle class holds the code to draws circles.
+ */
+public class Circle {
+    int x;                      // x coordinate
+    int y;                      // y coordinate
+    int radius;                 // radius of the circle
+    int red , green, blue;      // the value of the colors red, green, and blue.
+    Color color;                // constructor
+    
+    /**
+     * Class constructor. 
+     */
+    public Circle() {
+        Random ran = new Random();
+        this.x = x_center;
+        this.y = y_center;
+        this.radius = ran.nextInt(150) + 20;
+        this.red = (int)(256*Math.random());
+        this.green = (int)(256*Math.random());
+        this.blue = (int)(256*Math.random());  
+    }
+    
+    /**
+     * Method that draws the circles.
+     * 
+     * @param g     graphics.
+     */
+    public void draw(Graphics g) { 
+        g.setColor(new Color(red, green, blue));
+        g.fillOval(x-(radius/2), y-(radius/2), radius, radius);
+      
+    }
+}
+/**
+ * The Dots class holds the code to draw dots/lines.
+ * 
+ */
+public class Dots {
+    int x;  // x coordinate
+    int y;  // y coordinate
+    
+    /**
+     * Class constructor - Sets the local x and y coordinates to the 
+     * x and y coordinates of the mouse as it moves.
+     * 
+     * @param x     x coordinate.
+     * @param y     y coordinate.
+     */
+    public Dots(int x, int y) {
+        this.x = x_draw;
+        this.y = y_draw;  
+    }
+    
+    /**
+     * method that draws the dots/lines.
+     * 
+     * @param g     graphics.
+     * @param d     constructor.
+     */
+    public void drawdots(Graphics g, Dots d) { 
+        g.setColor(Color.BLUE);
+        g.drawLine(x, y, d.x, d.y);      
+    }
+}
+} 
+
